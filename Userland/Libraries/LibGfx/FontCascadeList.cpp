@@ -25,19 +25,22 @@ void FontCascadeList::extend(FontCascadeList const& other)
     }
 }
 
-Gfx::Font const& FontCascadeList::font_for_code_point(u32 code_point) const
+// https://drafts.csswg.org/css-fonts/#descdef-font-face-unicode-range
+// When the font is used, the effective character map is the **intersection** of
+// the codepoints defined by unicode-range with the font’s character map.
+Optional<Gfx::Font const&> FontCascadeList::font_for_code_point(u32 code_point) const
 {
     for (auto const& entry : m_fonts) {
-        if (!entry.unicode_ranges.has_value())
-            return entry.font;
         if (!entry.font->contains_glyph(code_point))
             continue;
+        if (!entry.unicode_ranges.has_value())
+            return entry.font;
         for (auto const& range : *entry.unicode_ranges) {
             if (range.contains(code_point))
                 return entry.font;
         }
     }
-    VERIFY_NOT_REACHED();
+    return {};
 }
 
 bool FontCascadeList::equals(FontCascadeList const& other) const
@@ -49,6 +52,15 @@ bool FontCascadeList::equals(FontCascadeList const& other) const
             return false;
     }
     return true;
+}
+
+Vector<FlyString> FontCascadeList::families() const
+{
+    Vector<FlyString> families;
+    for (auto const& entry : m_fonts) {
+        families.append(entry.font->family());
+    }
+    return families;
 }
 
 }

@@ -407,9 +407,44 @@ Optional<TextNode::Chunk> TextNode::ChunkIterator::next()
 
     auto start_of_chunk = m_iterator;
 
-    Gfx::Font const& font = m_font_cascade_list.font_for_code_point(*m_iterator);
+    auto recalculate_rendered_font = [&m_font_cascade_list](u32 code_point) -> Gfx::Font const& {
+        auto result = m_font_cascade_list.font_for_code_point(code_point);
+        if (result.has_value()) {
+            return result.value();
+        }
+        auto first = m_font_cascade_list.font_for_code_point(' ');
+        if (!first.has_value()) {
+            first = m_font_cascade_list.first();
+        }
+        auto const& scaled_font = dynamic_cast<ScaledFont const&>(first.value());
+        auto font_size_in_pt = scaled_font.point_size();
+        auto weight = scaled_font.weight();
+        auto width = scaled_font.width();
+        auto slope = scaled_font.slope();
+        auto families = m_font_cascade_list.families();
+        for (auto const& family : families) {
+            auto const& fallback_names = Platform::FontPlugin::the().fallback_font_names(famliy);
+            for (auto const& fallback_name : fallback_names) {
+                if (auto found_font = Gfx::FontDatabase::the().get(fallback_name, font_size_in_pt, weight, width, slope); found_font->contains_glyph(code_point)) {
+                    result = *found_font;
+                    break;
+                }
+            }
+            if (result.has_value()) {
+                break;
+            }
+        }
+        if (!result.has_value()) {
+            result = first.value();
+        }
+        return result.value();
+    };
+
+    // Rendered font for the current chunk.
+    auto const& font = recalculate_rendered_font(*m_iterator);
+
     while (m_iterator != m_utf8_view.end()) {
-        if (&font != &m_font_cascade_list.font_for_code_point(*m_iterator)) {
+        if (&font != &recalculate_rendered_font(*m_iterator)) {
             if (auto result = try_commit_chunk(start_of_chunk, m_iterator, false, font); result.has_value())
                 return result.release_value();
         }
