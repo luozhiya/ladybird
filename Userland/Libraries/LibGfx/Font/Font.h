@@ -134,9 +134,9 @@ public:
     virtual float width(StringView) const = 0;
     virtual float width(Utf8View const&) const = 0;
 
+    virtual u16 width() const = 0;
     virtual String family() const = 0;
     virtual String variant() const = 0;
-    virtual u16 width() const = 0;
 
     virtual NonnullRefPtr<Font> with_size(float point_size) const = 0;
 
