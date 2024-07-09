@@ -408,9 +408,8 @@ Optional<TextNode::Chunk> TextNode::ChunkIterator::next()
     auto start_of_chunk = m_iterator;
 
     auto recalculate_rendered_font = [&m_font_cascade_list](u32 code_point) -> Gfx::Font const& {
-        auto result = m_font_cascade_list.font_for_code_point(code_point);
-        if (result.has_value()) {
-            return result.value();
+        if (auto font = m_font_cascade_list.font_for_code_point(code_point); font.has_value()) {
+            return font.value();
         }
         auto first = m_font_cascade_list.font_for_code_point(' ');
         if (!first.has_value()) {
@@ -426,18 +425,11 @@ Optional<TextNode::Chunk> TextNode::ChunkIterator::next()
             auto const& fallback_names = Platform::FontPlugin::the().fallback_font_names(famliy);
             for (auto const& fallback_name : fallback_names) {
                 if (auto found_font = Gfx::FontDatabase::the().get(fallback_name, font_size_in_pt, weight, width, slope); found_font && found_font->contains_glyph(code_point)) {
-                    result = *found_font;
-                    break;
+                    return *found_font;
                 }
             }
-            if (result.has_value()) {
-                break;
-            }
         }
-        if (!result.has_value()) {
-            result = first.value();
-        }
-        return result.value();
+        return first.value();
     };
 
     // Rendered font for the current chunk.
