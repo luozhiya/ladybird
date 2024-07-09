@@ -425,7 +425,7 @@ Optional<TextNode::Chunk> TextNode::ChunkIterator::next()
         for (auto const& family : families) {
             auto const& fallback_names = Platform::FontPlugin::the().fallback_font_names(famliy);
             for (auto const& fallback_name : fallback_names) {
-                if (auto found_font = Gfx::FontDatabase::the().get(fallback_name, font_size_in_pt, weight, width, slope); found_font->contains_glyph(code_point)) {
+                if (auto found_font = Gfx::FontDatabase::the().get(fallback_name, font_size_in_pt, weight, width, slope); found_font && found_font->contains_glyph(code_point)) {
                     result = *found_font;
                     break;
                 }
