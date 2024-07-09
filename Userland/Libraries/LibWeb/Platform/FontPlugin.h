@@ -35,6 +35,7 @@ public:
     virtual Gfx::Font& default_fixed_width_font() = 0;
 
     virtual FlyString generic_font_name(GenericFont) = 0;
+    virtual Optional<Vector<FlyString>&> fallback_font_names(FlyString const& family) = 0;
 };
 
 }

@@ -5,8 +5,11 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
+#include "LibGfx/FontCascadeList.h"
 #include <AK/CharacterTypes.h>
 #include <AK/StringBuilder.h>
+#include <Ladybird/FontPlugin.h>
+#include <LibGfx/Font/FontDatabase.h>
 #include <LibUnicode/CharacterTypes.h>
 #include <LibWeb/DOM/Document.h>
 #include <LibWeb/Layout/BlockContainer.h>
@@ -407,9 +410,35 @@ Optional<TextNode::Chunk> TextNode::ChunkIterator::next()
 
     auto start_of_chunk = m_iterator;
 
-    Gfx::Font const& font = m_font_cascade_list.font_for_code_point(*m_iterator);
+    auto recalculate_rendered_font = [&](u32 code_point, Gfx::FontCascadeList &result) -> Gfx::Font const& {
+        if (auto font = m_font_cascade_list.font_for_code_point(code_point); font.has_value()) {
+            return font.value();
+        }
+        auto const& first = m_font_cascade_list.first();
+        // return first;
+        m_font_cascade_list.for_each_font([&](Gfx::Font const& font) -> bool {
+            if (auto fallback_names = Platform::FontPlugin::the().fallback_font_names(font.family()); fallback_names.has_value()) {
+                for (auto const& fallback_name : fallback_names.value()) {
+                    auto found_font = Gfx::FontDatabase::the().get(fallback_name, first.point_size(), first.weight(), first.width(), first.slope());
+                    if (found_font && found_font->contains_glyph(code_point)) {
+                        result.add(*found_font);
+                        return true;
+                    }
+                }
+            }
+            return false;
+        });
+        return result.is_empty() ? first : result.first();
+    };
+
+    auto v0 = Gfx::FontCascadeList::create();
+    auto v1 = Gfx::FontCascadeList::create();
+
+    // Rendered font for the current chunk.
+    Gfx::Font const& font = recalculate_rendered_font(*m_iterator, v0);
+
     while (m_iterator != m_utf8_view.end()) {
-        if (&font != &m_font_cascade_list.font_for_code_point(*m_iterator)) {
+        if (font.family() != recalculate_rendered_font(*m_iterator, v1).family()) {
             if (auto result = try_commit_chunk(start_of_chunk, m_iterator, false, font); result.has_value())
                 return result.release_value();
         }

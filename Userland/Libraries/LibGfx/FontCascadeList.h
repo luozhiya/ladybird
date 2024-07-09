@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <AK/FlyString.h>
+#include <AK/Vector.h>
 #include <LibGfx/Font/Font.h>
 #include <LibGfx/Font/UnicodeRange.h>
 
@@ -27,7 +29,8 @@ public:
 
     void extend(FontCascadeList const& other);
 
-    Gfx::Font const& font_for_code_point(u32 code_point) const;
+    Optional<Gfx::Font const&> font_for_code_point(u32 code_point) const;
+    void for_each_font(Function<bool(Font const&)> callback) const;
 
     bool equals(FontCascadeList const& other) const;
 
