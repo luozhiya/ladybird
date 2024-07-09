@@ -415,11 +415,10 @@ Optional<TextNode::Chunk> TextNode::ChunkIterator::next()
         if (!first.has_value()) {
             first = m_font_cascade_list.first();
         }
-        auto const& scaled_font = dynamic_cast<ScaledFont const&>(first.value());
-        auto font_size_in_pt = scaled_font.point_size();
-        auto weight = scaled_font.weight();
-        auto width = scaled_font.width();
-        auto slope = scaled_font.slope();
+        auto font_size_in_pt = first.point_size();
+        auto weight = first.weight();
+        auto width = first.width();
+        auto slope = first.slope();
         auto families = m_font_cascade_list.families();
         for (auto const& family : families) {
             auto const& fallback_names = Platform::FontPlugin::the().fallback_font_names(famliy);

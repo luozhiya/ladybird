@@ -49,8 +49,10 @@ public:
     virtual u8 baseline() const override { return m_point_height; }  // FIXME: Read from font
     virtual float width(StringView) const override;
     virtual float width(Utf8View const&) const override;
+
     virtual String family() const override { return m_font->family(); }
     virtual String variant() const override { return m_font->variant(); }
+    virtual u16 width() const override { return m_font->width(); }
 
     virtual NonnullRefPtr<ScaledFont> scaled_with_size(float point_size) const;
     virtual NonnullRefPtr<Font> with_size(float point_size) const override;
